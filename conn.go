@@ -3,7 +3,11 @@ package apns
 import (
 	"crypto/tls"
 	"net"
+	"net/url"
+	"os"
 	"strings"
+
+	"golang.org/x/net/proxy"
 )
 
 const (
@@ -60,9 +64,23 @@ func (c *Conn) Connect() error {
 		c.NetConn.Close()
 	}
 
-	conn, err := net.Dial("tcp", c.gateway)
-	if err != nil {
-		return err
+	var useProxy bool
+	var conn net.Conn
+	var err error
+
+	allProxy := os.Getenv("all_proxy")
+	if len(allProxy) != 0 {
+		proxyURL, err := url.Parse(allProxy)
+		if err == nil {
+			dialer, err := proxy.FromURL(proxyURL, &net.Dialer{})
+			if err == nil {
+				conn, _ = dialer.Dial("tcp", c.gateway)
+				useProxy = true
+			}
+		}
+	}
+	if !useProxy {
+		conn, err = net.Dial("tcp", c.gateway)
 	}
 
 	tlsConn := tls.Client(conn, c.Conf)
