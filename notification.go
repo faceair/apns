@@ -126,12 +126,13 @@ func (p *Payload) SetCustomValue(key string, value interface{}) error {
 }
 
 type Notification struct {
-	ID          string
-	DeviceToken string
-	Identifier  uint32
-	Expiration  *time.Time
-	Priority    int
-	Payload     *Payload
+	ID            string
+	DeviceToken   string
+	Identifier    uint32
+	Expiration    *time.Time
+	Priority      int
+	Payload       *Payload
+	PayloadSource []byte
 }
 
 func NewNotification() Notification {
@@ -150,7 +151,10 @@ func (n Notification) ToBinary() ([]byte, error) {
 		return b, fmt.Errorf("convert token to hex error: %s", err)
 	}
 
-	j, _ := json.Marshal(n.Payload)
+	j := n.PayloadSource
+	if len(j) == 0 {
+		j, _ = json.Marshal(n.Payload)
+	}
 
 	buf := bytes.NewBuffer(b)
 
